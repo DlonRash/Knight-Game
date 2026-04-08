@@ -38,3 +38,36 @@ while running:
 
 pygame.quit()    
     
+
+#tree stuff Chris
+class tree:
+    def __init__(self, size=8): #cause it's 8*8
+        self.size = size
+        self.board = [[0] * size for _ in range(size)]
+
+    def print_board(self):
+        
+        print('  ', end='')
+        for col in range(1, self.size + 1):
+            print(f'{col:2}', end='')
+        print()
+
+        
+        for row in range(1, self.size + 1):
+            print(f'{row} ', end='')
+            for col in range(self.size):
+                print(f'{self.board[row-1][col]:2}', end='')
+            print()
+    
+    def set_marker(self, row, col, value='g'):
+        if row < 1 or row > 8 or col < 1 or col > 8:
+            print("please use numbers between 1 and 8")
+            return
+        self.board[row-1][col-1] = value
+
+    def set_knight(self, row, col, value='k'):
+        if row < 1 or row > 8 or col < 1 or col > 8:
+            print("please use numbers between 1 and 8")
+            return
+        self.board[row-1][col-1] = value
+
