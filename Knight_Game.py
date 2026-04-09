@@ -49,7 +49,8 @@ import heapq
 
 def get_moves(position):
     x,y = position
-    #all 8 possible moves:
+    
+#all possible moves:
     moves_possy = [(2,1),(2,-1),(-2,1),(-2,-1),(1,2),(1,-2),(-1,2),(-1,-2)]
 
     valid_moves= []
@@ -57,7 +58,7 @@ def get_moves(position):
     for j,k in moves_possy:
         new_x, new_y = x + j, y + k
         
-        #keeping the variables in the board:
+        #keeping the knight within the board:
         if 0 <= new_x <8 and 0 <= new_y <8:
             valid_moves.append((new_x,new_y))
     return valid_moves
@@ -74,7 +75,7 @@ if 0 > y or y > 7:
        while y <0 or y >7:
         y = int(input("enter a number between 0 and 7:")) 
 
-#choose the target
+#choose the target:
 tx = int(input("Enter an x for target: "))
 if tx< 0 or tx> 7:
     while tx <0 or tx >7:
@@ -86,25 +87,26 @@ if 0 > ty or ty > 7:
         ty = int(input("enter a number between 0 and 7:")) 
 
 
+
 startPos = [x,y]
 target = [tx, ty]
 
+#creating a tuple here because it keep interfering with the algos
 startPos = tuple(startPos)
 
 
 
 
     # BFS
-""" the algorithm will search neighbors then move the the next level. It used a queue stucture."""
-
+""" the algorithm will search neighbors, then it childrens, then move the the next level. It used a queue stucture."""
 
 def BFS():
     startPos
     queue = [[startPos]]
 
-    visited_sqaure = set()
-    visited_sqaure.add(startPos)
-#while the queue is not empty continue to add it to the path and generate the next movement
+    visit_Sq = set()
+    visit_Sq.add(startPos)
+#while the queue is not empty continue to add it to the path:
     while len(queue) != 0 :
         #FIFO
         path = queue.pop(0)
@@ -116,8 +118,8 @@ def BFS():
         else:
             for i in get_moves(curPos):
                 i = tuple(i)
-                if i not in visited_sqaure:
-                    visited_sqaure.add(i)
+                if i not in visit_Sq:
+                    visit_Sq.add(i)
                     queue.append(path + [i])
         
 
@@ -125,15 +127,18 @@ def BFS():
 
     #DFS
 def DFS():
-    """ will go the farthest one branch then backtrack to go down the neighboring braches."""
+    """goes all the way down one branch, checks, then backtrack up.(it will repeat these steps)"""
+
     startPos
     stack = [[startPos]]
 
-    visited_sqaure = set()
-    visited_sqaure.add(startPos)
+    visit_Sq= set()
+    visit_Sq.add(startPos)
+
 #while the stack is not empty continue to add it to the path and generate the next movement
     while len(stack) != 0 :
-        #FILO
+        #FILO and destackings from the back to correctly list(since it last out) the sqaures
+        #basically a reverse BFS
         path = stack.pop()
         #will always be at the last square
         curPos = path[-1]
@@ -143,55 +148,60 @@ def DFS():
         else:
             for i in get_moves(curPos):
                 i = tuple(i)
-                if i not in visited_sqaure:
-                    visited_sqaure.add(i)
+                if i not in visit_Sq:
+                    visit_Sq.add(i)
                     stack.append(path + [i])
         
 
     #A*search
-    """determines the shortest base off of heuristics(distance)"""
+"""determines the shortest base off of heuristics(distance(h)) and dijkstra's(the actucal distance(g))"""
 
-def heuristic(pos,target):
+def hur(pos,target):
+    #hur can't be negative: this is distance
         new_x = abs(target[0]-pos[0])
         new_y = abs(target[1]-pos[1])
 
-        true_value = new_x+ new_y
-        #the knights can only move by 3(in total), so the min is true_value/3
+        true_val = new_x+ new_y
+    #the knights can only move by 3(in total), so the min is true_value/3
 
-        mini_move = (true_value // 3)
+        tru_move = (true_val // 3)
         #can't overestimate h, but also will not serevally underestimate it either
-        if true_value % 3 != 0:
-                mini_move +=1
+        if true_val % 3 != 0:
+                tru_move +=1
         
 
-        return mini_move
+        return tru_move
 
 def a_search():
-        
+#our storage:
+    a_list = [] 
+    visited = {}  
 
-    pq = []  # priority queue
-    visited = {}  # tracks best g(n) for each square
 
-    g_start = 0
-    f_start = g_start + heuristic(startPos, target)
-    heapq.heappush(pq, (f_start, [startPos]))
-    visited[startPos] = g_start
+    # our g, which is the currant cost of the path(I think)
+    gCur = 0
 
-    while pq:
-            f_curr, path = heapq.heappop(pq)
+#the a*search uses the formula of : f = g(n) + h(n) to find the distance. (Never overshoot the h.)
+    f = gCur + hur(startPos, target)
+
+#will push the f and starting position into the top of pq.
+    heapq.heappush(a_list, (f, [startPos]))
+    visited[startPos] = gCur
+
+    while len(a_list) != 0:
+            curSquare, path = heapq.heappop(a_list)
             curPos = path[-1]
-
             if curPos == tuple(target):
-                return path  # found shortest path
+                return path  
+            
+            for n in get_moves(curPos):
+                gNewCur = len(path)  
+                fn = gNewCur + hur(n, target)
 
-            for move in get_moves(curPos):
-                g_new = len(path)  # moves so far
-                f_new = g_new + heuristic(move, target)
-
-                # Add to pq only if it's a better path
-                if move not in visited or g_new < visited[move]:
-                    visited[move] = g_new
-                    heapq.heappush(pq, (f_new, path + [move]))
+            # Add to pq only if it cost less
+                if n not in visited or gNewCur < visited[n]:
+                    visited[n] = gNewCur
+                    heapq.heappush(a_list, (fn, path + [n]))
 
 
 #checking the functions
