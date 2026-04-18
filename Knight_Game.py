@@ -7,39 +7,27 @@ import pygame
 pygame.init()
 screen = pygame.display.set_mode((1280, 720))
 clock = pygame.time.Clock()
+
+pygame.display.set_caption("Knight Path Visualization")
 running = True
-# Drawing Board
+
+font = pygame.font.SysFont(None, 28)
+Knight_Piece = pygame.image.load(R"C:\Users\chris\OneDrive\Desktop\make games\knight\Knight-Game\Knight free icons designed by Victoruler.png")
+Knight_Piece = pygame.transform.scale(Knight_Piece, (80, 80))
+
+# Drawing Board/Setting up board
 cellSize = 80
 board = pygame.Surface((cellSize * 8, cellSize * 8))
 board_x = (1280 - (cellSize * 8)) // 2
 board_y = (720 - (cellSize * 8)) // 2
+
 for x in range(8):
     for y in range(8):
         if (x + y) % 2 == 0:
-            color = ( (253, 253, 150)) 
+            color = (255, 253, 208)
         else:
-            color = (100, 100, 100)  
-        pygame.draw.rect(board, color,  (x * cellSize, y * cellSize, cellSize, cellSize))
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-
-    # fill the screen with a color to wipe away anything from last frame
-    screen.fill("Thistle")
-
-    # RENDER YOUR GAME HERE
-    screen.blit(board, (board_x, board_y))
-
-    # flip() the display to put your work on screen
-    pygame.display.flip()
-
-    clock.tick(60)  # limits FPS to 60
-
-pygame.quit()    
-    
-
-
+            color = (150, 75, 0)
+        pygame.draw.rect(board, color, (x * cellSize, y * cellSize, cellSize, cellSize))
 
 
 """Kara's code for our project: """
@@ -178,59 +166,139 @@ def aSearching():
                 q.append([g + h, path + [ele]])
     
         
+# Board Game Script (Cont'd)
+
+# compute paths
+bfs_path = BFS()
+dfs_path = DFS()
+aSearching_path = aSearching()
+
+# gonna try and visualize each state
+mode = "BFS"
+index = 0
+timer = pygame.time.get_ticks()
+delay = 300 # ms per state
+def get_current_path_and_color(mode):
+    if mode == "BFS":
+        return bfs_path, (0,200,0)
+    elif mode == "DFS":
+        return dfs_path, (200,0,0)
+    elif mode == "aSearching":
+        return aSearching_path, (0,0,200)
+    else:
+        return [], (0,0,0)
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    # fill the screen with a color to wipe away anything from last frame
+    screen.fill((225,217,209))
+
+    # RENDER YOUR GAME HERE
+    
+    screen.blit(board, (board_x, board_y))
+    # current knight position
+    if index > 0 and path:
+        Knight_square = path[min(index - 1, len(path)-1)]
+    else:
+        Knight_square = startPos
+    
+    kx = board_x + Knight_square[0] * cellSize
+    ky = board_y + Knight_square[1] * cellSize
+    screen.blit(Knight_Piece, (kx, ky))
+    now = pygame.time.get_ticks()
+    
+
+
+    path, color = get_current_path_and_color(mode)
+    # Start square being drawn
+    start_px = board_x + target[0] * cellSize
+    start_py = board_y + target[1] * cellSize
+    pygame.draw.rect(screen, (255, 255, 0), (start_px, start_py, cellSize, cellSize), 4)
+
+    # Target square being drawn
+    target_px = board_x + target[0] * cellSize
+    target_py = board_y + target[1] * cellSize
+    pygame.draw.rect(screen, (0, 0, 0), (target_px, target_py, cellSize, cellSize), 4)
+    # draw path leading to current index
+    for i in range(index):
+        if i < len(path):
+            px = board_x + path[i][0] * cellSize
+            py = board_y + path[i][1] * cellSize
+            pygame.draw.rect(screen, color, (px, py, cellSize, cellSize), 4)
 
 
 
+    # drawing the path
+    for i in range(index):
+        x,y = path[i]
+        px = board_x + x * cellSize
+        py = board_y + y * cellSize
+        pygame.draw.rect(screen, color, (px, py, cellSize, cellSize))
+    # advancing each step of the path
+    if now - timer> delay and index<len(path):
+        index += 1
+        timer = now
+    # switchin to next algroithim
+    if index>= len(path) and mode != "DONE":
+        pygame.time.wait(800)
+        if mode == "BFS":
+            mode = "DFS"
+        elif mode == "DFS":
+            mode = "aSearching"
+        else:
+            mode = "DONE"
+        index = 0
+        timer = pygame.time.get_ticks()
+       
+       
+    label = font.render(f"Mode: {mode}", True, (0,0,0))
+    screen.blit(label, (20,20))
 
-
-
-a = BFS()
-print(a)
-
-b = DFS()
-print(b)
-
-c = aSearching()
-print(c)
-            
-
-
+    pygame.display.flip()
+    clock.tick(60)
 
 #tree stuff Chris
-class tree:
-    def __init__(self, size=8): #cause it's 8*8
-        self.size = size
-        self.board = [[0] * size for _ in range(size)]
+class KnightNode:
+    def __init__(self, position):
+        self.position = position
+        self.children = []        # up to 8 possible moves
 
-    def print_board(self):
-        
-        print('  ', end='')
-        for col in range(1, self.size + 1):
-            print(f'{col:2}', end='')
-        print()
+    def add_child(self, node):
+        self.children.append(node)
 
-        
-        for row in range(1, self.size + 1):
-            print(f'{row} ', end='')
-            for col in range(self.size):
-                print(f'{self.board[row-1][col]:2}', end='')
-            print()
-    
-    def set_marker(self, row, col, value=' g'):
-        if row < 1 or row > 8 or col < 1 or col > 8:
-            print("please use numbers between 1 and 8")
+
+
+class KnightTree:
+    def __init__(self, start, max_depth=3):
+        self.root = KnightNode(start)
+        self.build(self.root, max_depth)
+
+    # Recursively builds the tree up to max_depth
+    def build(self, node, depth):
+        if depth == 0:
             return
-        self.board[row-1][col-1] = value
+        for move in get_moves(node.position):
+            child = KnightNode(move)
+            node.add_child(child)
+            self.build(child, depth - 1)
 
-    def set_knight(self, row, col, value=' k'):
-        if row < 1 or row > 8 or col < 1 or col > 8:
-            print("please use numbers between 1 and 8")
-            return
-        self.board[row-1][col-1] = value
+    # Prints the tree with indentation to show levels
+    def print_tree(self, node=None, level=0):
+        if node is None:
+            node = self.root
+        indent = "    " * level
+        print(f"{indent}{'└── ' if level > 0 else ''}{node.position}")
+        for child in node.children:
+            self.print_tree(child, level + 1)
 
 
+p = KnightTree(startPos, max_depth=2)
+p.print_tree()
 
-p = tree()
-p.set_marker(tx, ty)   #setting a marker/goal at 4,6
-p.set_knight(x, y)    #setting the knight at 5,4
-p.print_board()
+pygame.quit()    
+        
+
+                
