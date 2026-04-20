@@ -12,7 +12,7 @@ pygame.display.set_caption("Knight Path Visualization")
 running = True
 
 font = pygame.font.SysFont(None, 28)
-Knight_Piece = pygame.image.load(R"C:\Users\chris\OneDrive\Desktop\make games\knight\Knight-Game\Knight free icons designed by Victoruler.png")
+Knight_Piece = pygame.image.load(R"Knight free icons designed by Victoruler.png")
 Knight_Piece = pygame.transform.scale(Knight_Piece, (80, 80))
 
 # Drawing Board/Setting up board
@@ -245,13 +245,17 @@ while running:
     if index>= len(path) and mode != "DONE":
         pygame.time.wait(800)
         if mode == "BFS":
+            print(timer)
             mode = "DFS"
+            print(timer)
         elif mode == "DFS":
+            print(timer)
             mode = "aSearching"
         else:
             mode = "DONE"
         index = 0
         timer = pygame.time.get_ticks()
+        print(timer)
        
        
     label = font.render(f"Mode: {mode}", True, (0,0,0))
