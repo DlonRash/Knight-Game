@@ -1,7 +1,7 @@
 ## Board Game Script[D'lon Rash]
 
 # since im gonna want to visualize the project, I'm going to start implementing pygame to help me do so. "Dlon"
-
+import time
 import pygame
 # screen setup
 pygame.init()
@@ -167,17 +167,49 @@ def aSearching():
     
         
 # Board Game Script (Cont'd)
+import math
+def draw_direction(surface, start, end, color, width=4):
+    pygame.draw.line(surface, color, start, end, width)
+
+    # head of direaction
+    angle = math.atan2(end[1] - start[1], end[0]-start[0])
+    size = 10
+
+    left =(
+        end[0] - size * math.cos(angle - math.pi / 6),
+        end[1] - size * math.sin(angle - math.pi / 6)
+    )
+    right = (
+        end[0] - size * math.cos(angle + math.pi / 6),
+        end[1] - size * math.sin(angle + math.pi / 6)
+
+    )
+
+
+    pygame.draw.polygon(surface, color, [end, left, right])
+
+
 
 # compute paths
+#bfs_path = BFS()
+#dfs_path = DFS()
+#aSearching_path = aSearching()
+
+# timing each algroithim
+start = time.perf_counter()
 bfs_path = BFS()
+bfs_time = time.perf_counter() - start
+
+start = time.perf_counter()
 dfs_path = DFS()
+dfs_time = time.perf_counter() - start
+
+start = time.perf_counter()
 aSearching_path = aSearching()
+astar_time = time.perf_counter() - start
 
 # gonna try and visualize each state
-mode = "BFS"
-index = 0
-timer = pygame.time.get_ticks()
-delay = 300 # ms per state
+
 def get_current_path_and_color(mode):
     if mode == "BFS":
         return bfs_path, (0,200,0)
@@ -188,6 +220,11 @@ def get_current_path_and_color(mode):
     else:
         return [], (0,0,0)
 running = True
+
+mode = "BFS"
+index = 0
+timer = pygame.time.get_ticks()
+delay = 600 # ms per state
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -199,6 +236,7 @@ while running:
     # RENDER YOUR GAME HERE
     
     screen.blit(board, (board_x, board_y))
+    path, color = get_current_path_and_color(mode)
     # current knight position
     if index > 0 and path:
         Knight_square = path[min(index - 1, len(path)-1)]
@@ -207,12 +245,12 @@ while running:
     
     kx = board_x + Knight_square[0] * cellSize
     ky = board_y + Knight_square[1] * cellSize
-    screen.blit(Knight_Piece, (kx, ky))
+    #screen.blit(Knight_Piece, (kx, ky))
     now = pygame.time.get_ticks()
     
 
 
-    path, color = get_current_path_and_color(mode)
+    
     # Start square being drawn
     start_px = board_x + target[0] * cellSize
     start_py = board_y + target[1] * cellSize
@@ -233,33 +271,54 @@ while running:
 
     # drawing the path
     for i in range(index):
-        x,y = path[i]
-        px = board_x + x * cellSize
-        py = board_y + y * cellSize
+        if i < len(path):
+            x, y = path[i]
+            px = board_x + x * cellSize
+            py = board_y + y * cellSize
+
         pygame.draw.rect(screen, color, (px, py, cellSize, cellSize))
+    for i in range(index - 1):
+        if i + 1 < len(path):
+            x1,y1 = path[i]
+            x2, y2 = path[i + 1]
+            start_px = board_x + x1 * cellSize + cellSize // 2
+            start_py = board_y + y1 * cellSize + cellSize // 2
+
+            end_px = board_x + x2 * cellSize + cellSize //2
+            end_py = board_y + y2 * cellSize + cellSize //2
+            draw_direction(screen, (start_px, start_py), (end_px, end_py), color)
+        #pygame.draw.rect(screen, color, (px, py, cellSize, cellSize))
     # advancing each step of the path
+    screen.blit(Knight_Piece, (kx, ky))
     if now - timer> delay and index<len(path):
         index += 1
         timer = now
     # switchin to next algroithim
     if index>= len(path) and mode != "DONE":
-        pygame.time.wait(800)
+        pygame.time.wait(1000)
         if mode == "BFS":
-            print(timer)
             mode = "DFS"
-            print(timer)
         elif mode == "DFS":
-            print(timer)
             mode = "aSearching"
         else:
             mode = "DONE"
         index = 0
         timer = pygame.time.get_ticks()
-        print(timer)
        
        
     label = font.render(f"Mode: {mode}", True, (0,0,0))
     screen.blit(label, (20,20))
+    if mode == "BFS":
+        time_text = f"Time: {bfs_time:.6f}s"
+    elif mode == "DFS":
+        time_text = f"Time: {dfs_time:.6f}s"
+    elif mode == "aSearching":
+        time_text = f"Time: {astar_time:.6f}s"
+    else:
+            time_text = ""
+    time_label = font.render(time_text,True, (0,0,0))
+    screen.blit(time_label, (20, 50))
+    
 
     pygame.display.flip()
     clock.tick(60)
